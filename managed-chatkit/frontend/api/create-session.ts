@@ -1,31 +1,26 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import OpenAI from "openai";
 
-export const config = { runtime: "edge" };
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
-export default async function handler(req: Request) {
-  if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    const workflowId = req.body?.workflow?.id;
+    if (!workflowId || typeof workflowId !== "string" || !workflowId.startsWith("wf_")) {
+      return res.status(400).json({ error: "Invalid workflow id" });
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "Missing OPENAI_API_KEY env var" });
+
+    const client = new OpenAI({ apiKey });
+
+    const session = await client.chatkit.sessions.create({
+      workflow: { id: workflowId },
+    });
+
+    return res.status(200).json({ client_secret: session.client_secret });
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message ?? "Server error" });
   }
-
-  const body = await req.json().catch(() => ({}));
-  const workflowId = body?.workflow?.id;
-if (!workflowId || !workflowId.startsWith("wf_")) {
-  return new Response(
-    JSON.stringify({ error: "Invalid workflow id" }),
-    { status: 400, headers: { "Content-Type": "application/json" } }
-  );
-}
-
-  const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-
-  const session = await client.chatkit.sessions.create({
-    workflow: { id: workflowId },
-  });
-
-  return new Response(
-    JSON.stringify({ client_secret: session.client_secret }),
-    { headers: { "Content-Type": "application/json" } }
-  );
 }
