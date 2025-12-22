@@ -9,13 +9,12 @@ export default async function handler(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const workflowId = body?.workflow?.id;
-
-  if (!workflowId) {
-    return new Response(
-      JSON.stringify({ error: "Missing workflow id" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
-  }
+if (!workflowId || !workflowId.startsWith("wf_")) {
+  return new Response(
+    JSON.stringify({ error: "Invalid workflow id" }),
+    { status: 400, headers: { "Content-Type": "application/json" } }
+  );
+}
 
   const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
