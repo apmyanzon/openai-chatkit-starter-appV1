@@ -8,23 +8,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const apiKey = process.env.OPENAI_API_KEY;
+    const workflowId = process.env.CHATKIT_WORKFLOW_ID;
+
     if (!apiKey) {
       return res.status(500).json({ error: "Missing OPENAI_API_KEY env var" });
     }
 
-    const { workflowId, user } = req.body || {};
-    if (!workflowId || typeof workflowId !== "string" || !workflowId.startsWith("wf_")) {
-      return res.status(400).json({ error: "Missing/invalid workflowId" });
+    if (!workflowId || !workflowId.startsWith("wf_")) {
+      return res.status(500).json({
+        error: "Server misconfigured: CHATKIT_WORKFLOW_ID missing or invalid",
+      });
     }
 
-    // user can be any stable id you choose (device id, user id, etc.)
-    const userId = typeof user === "string" && user.length ? user : "anonymous";
+    const { user } = req.body || {};
+
+    // user can be any stable ID (user id, device id, etc.)
+    const userId =
+      typeof user === "string" && user.length ? user : "anonymous";
 
     const r = await fetch("https://api.openai.com/v1/chatkit/sessions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         "OpenAI-Beta": "chatkit_beta=v1",
       },
       body: JSON.stringify({
@@ -42,9 +48,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Expecting { client_secret: "..." }
+    // Returns client_secret, status, session id, etc.
     return res.status(200).json(data);
   } catch (e: any) {
-    return res.status(500).json({ error: e?.message || "Server error" });
+    return res.status(500).json({
+      error: e?.message || "Server error",
+    });
   }
 }
