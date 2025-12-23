@@ -1,17 +1,36 @@
 const readEnvString = (value: unknown): string | undefined =>
   typeof value === "string" && value.trim() ? value.trim() : undefined;
 
+/**
+ * Workflow ID (frontend)
+ * Comes from Vercel env var
+ */
 export const workflowId = (() => {
   const id = readEnvString(import.meta.env.VITE_CHATKIT_WORKFLOW_ID);
   if (!id || id.startsWith("wf_replace")) {
-    throw new Error("Set VITE_CHATKIT_WORKFLOW_ID in your .env file.");
+    throw new Error("Set VITE_CHATKIT_WORKFLOW_ID in your frontend env vars.");
   }
   return id;
 })();
 
+/**
+ * Backend base URL
+ * This MUST be your backend Vercel domain
+ */
+const backendUrl = (() => {
+  const url = readEnvString(import.meta.env.VITE_CHATKIT_BACKEND_URL);
+  if (!url) {
+    throw new Error("Set VITE_CHATKIT_BACKEND_URL in your frontend env vars.");
+  }
+  return url.replace(/\/$/, "");
+})();
+
+/**
+ * Fetcher that asks your backend to create a ChatKit session
+ */
 export function createClientSecretFetcher(
   workflow: string,
-  endpoint = "/api/create-session"
+  endpoint = `${backendUrl}/api/create-session`
 ) {
   return async (currentSecret: string | null) => {
     if (currentSecret) return currentSecret;
@@ -19,7 +38,9 @@ export function createClientSecretFetcher(
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workflow: { id: workflow } }),
+      body: JSON.stringify({
+        workflow: { id: workflow },
+      }),
     });
 
     const payload = (await response.json().catch(() => ({}))) as {
