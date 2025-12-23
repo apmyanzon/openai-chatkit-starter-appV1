@@ -2,12 +2,7 @@
   "name": "chatkit-backend",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=18"
-  },
-  "dependencies": {
-    "openai": "^4.80.0"
-  },
+  "engines": { "node": ">=18" },
   "devDependencies": {
     "@types/node": "^20.8.0",
     "@vercel/node": "^3.2.0",
