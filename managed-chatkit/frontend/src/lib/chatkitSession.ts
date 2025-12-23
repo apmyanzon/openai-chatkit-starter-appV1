@@ -1,37 +1,31 @@
 const readEnvString = (value: unknown): string | undefined =>
   typeof value === "string" && value.trim() ? value.trim() : undefined;
 
-/**
- * Workflow ID (frontend)
- * Comes from Vercel env var
- */
+const joinUrl = (base: string, path: string) => {
+  const b = base.replace(/\/+$/, "");
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${b}${p}`;
+};
+
 export const workflowId = (() => {
   const id = readEnvString(import.meta.env.VITE_CHATKIT_WORKFLOW_ID);
-  if (!id || id.startsWith("wf_replace")) {
-    throw new Error("Set VITE_CHATKIT_WORKFLOW_ID in your frontend env vars.");
+  if (!id || !id.startsWith("wf_")) {
+    throw new Error("Set VITE_CHATKIT_WORKFLOW_ID in your env vars.");
   }
   return id;
 })();
 
-/**
- * Backend base URL
- * This MUST be your backend Vercel domain
- */
-const backendUrl = (() => {
-  const url = readEnvString(import.meta.env.VITE_CHATKIT_BACKEND_URL);
-  if (!url) {
-    throw new Error("Set VITE_CHATKIT_BACKEND_URL in your frontend env vars.");
-  }
-  return url.replace(/\/$/, "");
+export const apiBaseUrl = (() => {
+  const v = readEnvString(import.meta.env.VITE_CHATKIT_API_BASE_URL);
+  // Optional: if not set, use same-origin (works only if frontend+backend are same project)
+  return v;
 })();
 
-/**
- * Fetcher that asks your backend to create a ChatKit session
- */
-export function createClientSecretFetcher(
-  workflow: string,
-  endpoint = `${backendUrl}/api/create-session`
-) {
+export function createClientSecretFetcher(workflow: string) {
+  const endpoint = apiBaseUrl
+    ? joinUrl(apiBaseUrl, "/api/create-session")
+    : "/api/create-session";
+
   return async (currentSecret: string | null) => {
     if (currentSecret) return currentSecret;
 
@@ -39,23 +33,21 @@ export function createClientSecretFetcher(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        workflow: { id: workflow },
+        workflowId: workflow,
+        user: "web-user-1",
       }),
     });
 
-    const payload = (await response.json().catch(() => ({}))) as {
-      client_secret?: string;
-      error?: string;
-    };
+    const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(payload.error ?? "Failed to create session");
+      throw new Error(payload?.error || "Failed to create session");
     }
 
-    if (!payload.client_secret) {
-      throw new Error("Missing client secret in response");
+    if (!payload?.client_secret) {
+      throw new Error("Missing client_secret in response");
     }
 
-    return payload.client_secret;
+    return payload.client_secret as string;
   };
 }
