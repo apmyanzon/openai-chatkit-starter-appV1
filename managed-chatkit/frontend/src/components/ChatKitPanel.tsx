@@ -37,7 +37,7 @@ export function ChatKitPanel() {
 
     startScreen: {
       greeting:
-        "Hi, I’m Install Genius Pulse. Ask me anything about Symterra Pulse.",
+        "Hi, I’m Install Genius. Ask me anything about Pulse or Live Wire.",
       prompts: [],
     },
   };
