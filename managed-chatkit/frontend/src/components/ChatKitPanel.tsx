@@ -11,7 +11,7 @@ export function ChatKitPanel() {
     () => createClientSecretFetcher(workflowId),
     []
   );
-
+// security isolation test branch
   const options: ChatKitOptions = {
     api: {
       getClientSecret,
