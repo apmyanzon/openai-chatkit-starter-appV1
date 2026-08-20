@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 import { ChatKit, useChatKit } from "@openai/chatkit-react";
 import type { ChatKitOptions } from "@openai/chatkit";
-import { createClientSecretFetcher, workflowId } from "../lib/chatkitSession";
+import {
+  createClientSecretFetcher,
+  workflowId,
+} from "../lib/chatkitSession";
 
 export function ChatKitPanel() {
   const getClientSecret = useMemo(
@@ -27,12 +30,25 @@ export function ChatKitPanel() {
       },
     },
 
+    /**
+     * Keep file/photo uploads OFF until the client
+     * explicitly approves their data handling.
+     *
+     * ChatKit attachments are disabled by default when
+     * attachment configuration is omitted.
+     */
     composer: {
       attachments: {
-        enabled: true,
-        maxCount: 5,
-        maxSize: 10_485_760,
+        enabled: false,
       },
+    },
+
+    /**
+     * Do not expose the thread-history UI for this
+     * public anonymous assistant.
+     */
+    history: {
+      enabled: false,
     },
 
     startScreen: {
@@ -45,7 +61,7 @@ export function ChatKitPanel() {
   const chatkit = useChatKit(options);
 
   return (
-    <div className="flex h-[90vh] w-full rounded-2xl bg-white shadow-sm dark:bg-slate-900">
+    <div className="flex h-[90vh] w-full rounded-2xl bg-white shadow-sm">
       <ChatKit
         control={chatkit.control}
         options={options}
