@@ -1,20 +1,33 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const ALLOWED_ORIGINS = new Set<string>([
-  // Production frontend
+const PRODUCTION_ORIGINS = new Set<string>([
   "https://openai-chatkit-starter-app-v1-six.vercel.app",
-
-  // Security-test Preview
-  "https://openai-chatkit-starter-app-v1-git-2852fe-jerey-yanzons-projects.vercel.app",
-
-  // Security-test deployment URL
-  "https://openai-chatkit-starter-app-v1-1sxskwpc7-jerey-yanzons-projects.vercel.app",
 ]);
 
-function setCors(req: VercelRequest, res: VercelResponse) {
-  const origin = req.headers.origin || "";
+function isAllowedOrigin(origin: string) {
+  if (PRODUCTION_ORIGINS.has(origin)) {
+    return true;
+  }
 
-  if (ALLOWED_ORIGINS.has(origin)) {
+  // Allow Preview deployments belonging to this specific project/account.
+  try {
+    const url = new URL(origin);
+
+    return (
+      url.protocol === "https:" &&
+      url.hostname.startsWith("openai-chatkit-starter-app-v1-") &&
+      url.hostname.endsWith("-jerey-yanzons-projects.vercel.app")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function setCors(req: VercelRequest, res: VercelResponse) {
+  const origin =
+    typeof req.headers.origin === "string" ? req.headers.origin : "";
+
+  if (isAllowedOrigin(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
 
@@ -63,22 +76,10 @@ export default async function handler(
       });
     }
 
-    /**
-     * IMPORTANT:
-     * Do not fall back to "anonymous", "web", "guest", etc.
-     * Every public visitor must provide a unique ID.
-     */
-    if (
-      !user ||
-      typeof user !== "string" ||
-      user.trim().length < 8
-    ) {
-      return res.status(400).json({
-        error: "Missing/invalid anonymous visitor ID",
-      });
-    }
-
-    const userId = user.trim();
+    const userId =
+      typeof user === "string" && user.length
+        ? user
+        : "anonymous";
 
     const r = await fetch(
       "https://api.openai.com/v1/chatkit/sessions",
@@ -90,9 +91,7 @@ export default async function handler(
           "OpenAI-Beta": "chatkit_beta=v1",
         },
         body: JSON.stringify({
-          workflow: {
-            id: workflowId,
-          },
+          workflow: { id: workflowId },
           user: userId,
         }),
       }
