@@ -1,10 +1,14 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const ALLOWED_ORIGINS = new Set<string>([
+  // Production frontend
   "https://openai-chatkit-starter-app-v1-six.vercel.app",
 
-  // Add the final production frontend/custom domains here if needed:
-  // "https://pulse.gosymterra.com",
+  // Security-test Preview
+  "https://openai-chatkit-starter-app-v1-git-2852fe-jerey-yanzons-projects.vercel.app",
+
+  // Security-test deployment URL
+  "https://openai-chatkit-starter-app-v1-1sxskwpc7-jerey-yanzons-projects.vercel.app",
 ]);
 
 function setCors(req: VercelRequest, res: VercelResponse) {
