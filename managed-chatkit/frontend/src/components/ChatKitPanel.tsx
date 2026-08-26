@@ -64,7 +64,6 @@ export function ChatKitPanel() {
     <div className="flex h-[90vh] w-full rounded-2xl bg-white shadow-sm">
       <ChatKit
         control={chatkit.control}
-        options={options}
         className="h-full w-full"
       />
     </div>
