@@ -46,11 +46,7 @@ export function createClientSecretFetcher(
     ? endpoint
     : "/api/create-session";
 
-  return async (currentSecret: string | null) => {
-    if (currentSecret) {
-      return currentSecret;
-    }
-
+  return async (_currentSecret: string | null) => {
     const response = await fetch(finalEndpoint, {
       method: "POST",
       headers: {
