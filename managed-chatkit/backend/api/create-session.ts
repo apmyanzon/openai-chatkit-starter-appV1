@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const ALLOWED_ORIGINS = new Set<string>([
   "https://openai-chatkit-starter-app-v1-six.vercel.app",
+  "https://pulse.gosymterra.com",
 
   // Add the final production frontend/custom domains here if needed:
   // "https://pulse.gosymterra.com",
